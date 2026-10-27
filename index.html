@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>풋살 팀 관리 도구</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 15px;
+            line-height: 1.6;
+        }
+
+        .app-section {
+            display: none;
+        }
+
+        .app-section.active {
+            display: block;
+        }
+
+        /* --- 공통 스타일 --- */
+
+        h1 {
+            font-size: 1.8em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            font-size: 1.3em;
+        }
+
+        h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            color: white;
+        }
+
+        .setup-section {
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .player-list {
+            display: grid;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .player-item label {
+            margin-left: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: color 0.2s, text-decoration 0.2s;
+        }
+
+        .player-item input {
+            cursor: pointer;
+            transform: scale(1.1);
+        }
+
+        .selection-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .selection-controls button {
+            font-size: 14px;
+            padding: 8px;
+            margin: 0;
+        }
+
+        .select-all-btn {
+            background-color: #17a2b8;
+        }
+
+        .deselect-all-btn {
+            background-color: #6c757d;
+        }
+
+        .back-btn {
+            background-color: #6c757d;
+            margin-top: 20px;
+        }
+
+        .back-btn:hover {
+            background-color: #5a6268;
+        }
+
+
+        /* --- 시작 화면 스타일 --- */
+
+        #initial-choice {
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        #initial-choice button {
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 15px;
+            padding: 15px;
+            font-size: 1.1em;
+        }
+
+        #goto-balancer-btn {
+            background-color: #007bff;
+        }
+
+        #goto-draft-btn {
+            background-color: #28a745;
+        }
+
+
+        /* --- 팀 밸런스 스타일 --- */
+
+        #balancer-app h2 small {
+            font-size: 0.5em;
+            color: #666;
+            font-weight: normal;
+            display: inline-block;
+        }
+
+        #balancer-app #team-option {
+            margin-bottom: 15px;
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        #balancer-app #playerSelection {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        }
+
+        @media (max-width: 600px) {
+            #balancer-app #playerSelection {
+                grid-template-columns: repeat(2, 1fr);
+                max-height: 400px;
+            }
+        }
+
+        #balancer-app #selected-count {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+            text-align: right;
+        }
+
+        #balancer-app #generateBtn {
+            background-color: #007bff;
+        }
+
+        #balancer-app #exportBtn {
+            background-color: #28a745;
+        }
+
+        #balancer-app #results {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 1%;
+        }
+
+        #balancer-app .team {
+            border: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        #balancer-app .team.show {
+            display: block;
+        }
+
+        #balancer-app .team.show[data-team-count="2"] {
+            flex-basis: 49%;
+            min-width: 150px;
+        }
+
+        #balancer-app .team.show[data-team-count="3"] {
+            flex-basis: 100%;
+            min-width: 150px;
+        }
+
+        @media (min-width: 601px) {
+            #balancer-app .team.show[data-team-count="3"] {
+                flex-basis: 32%;
+            }
+        }
+
+        #balancer-app #team-stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            background: #f4f4f4;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        #balancer-app #team-stats div {
+            margin: 5px 10px;
+            font-weight: bold;
+        }
+
+        #balancer-app ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        #balancer-app li {
+            margin-bottom: 3px;
+        }
+
+
+        /* --- 드래프트 스타일 --- */
+
+        #draft-app #csv-management label,
+        #draft-app #csv-management button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        #draft-app #csv-file-input {
+            display: none;
+        }
+
+        #draft-app #csv-import-label {
+            background-color: #ffc107;
+            color: #343a40;
+            border: 1px solid #ffc107;
+        }
+
+        #draft-app #csv-export-setup-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        #draft-app #team-count-option {
+            margin-bottom: 15px;
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+        #draft-app #team-count-option strong {
+            margin-right: 10px;
+        }
+
+        #draft-app #team-count-option label {
+            font-size: 15px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        #draft-app #team-count-option input[type="radio"] {
+            margin-right: 4px;
+            transform: scale(1.05);
+        }
+
+        #draft-app #total-selected-count {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+            text-align: right;
+        }
+
+        #draft-app #captain-selection,
+        #draft-app #pool-selection {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        #draft-app #pool-selection .player-item input:disabled + label {
+            color: #adb5bd;
+            text-decoration: line-through;
+            cursor: not-allowed;
+        }
+
+        #draft-app #start-draft-btn {
+            background-color: #007bff;
+        }
+
+        #draft-app #confirm-team-count-btn {
+            background-color: #17a2b8;
+            margin-bottom: 15px;
+        }
+
+        #draft-app #available-players.player-list {
+            grid-template-columns: repeat(4, 1fr);
+            max-height: 300px;
+        }
+
+        #draft-app .available-player-btn {
+            width: 100%;
+            text-align: left;
+            padding: 7px 6px;
+            margin-bottom: 5px;
+            background-color: #fff;
+            color: #212529;
+            border: 1px solid #ccc;
+            font-size: 12.5px;
+            cursor: pointer;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #draft-app .available-player-btn:hover:not(:disabled) {
+            background-color: #e9ecef;
+        }
+
+        #draft-app .available-player-btn.picked,
+        #draft-app .available-player-btn:disabled {
+            background-color: #f8f9fa;
+            color: #adb5bd;
+            cursor: not-allowed;
+            text-decoration: line-through;
+            border-color: #dee2e6;
+        }
+
+        #draft-app #resetBtn {
+            background-color: #ffc107;
+            color: #212529;
+            margin-top: 20px;
+        }
+
+        #draft-app #resetBtn:hover {
+            background-color: #e0a800;
+        }
+
+        #draft-app #current-turn {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #draft-app #teams-display {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+            grid-template-columns: repeat(var(--team-count, 4), 1fr);
+        }
+
+        @media (max-width: 600px) {
+            #draft-app #teams-display {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        #draft-app .team-display {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background: #fff;
+            display: none;
+        }
+
+        #draft-app .team-display.active {
+            display: block;
+        }
+
+        #draft-app .team-display h4 {
+            margin-top: 0;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        #draft-app .team-display ul {
+            padding-left: 18px;
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+
+        #draft-app .team-display li {
+            margin-bottom: 3px;
+        }
+
+        #draft-app .hidden-initially {
+            display: none;
+        }
+
+
+        /* --- 기타 선수 / 용병 입력 --- */
+
+        #draft-app #guest-player-section {
+            margin-bottom: 15px;
+            background: #f4f4f4;
+            padding: 12px 15px;
+            border-radius: 5px;
+        }
+
+        #draft-app .guest-player-inputs {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        #draft-app .guest-player-inputs input {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 600px) {
+            #draft-app .guest-player-inputs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- 시작 화면 -->
+
+    <div id="initial-choice" class="app-section active">
+
+        <h1>풋살 팀 관리 도구</h1>
+
+        <button
+            id="goto-balancer-btn"
+            onclick="showApp('balancer-app')"
+        >
+            📊 팀 밸런스 자동 분배
+        </button>
+
+        <button
+            id="goto-draft-btn"
+            onclick="showApp('draft-app')"
+        >
+            🏆 팀장 수동 드래프트
+        </button>
+
+    </div>
+
+
+    <!-- 팀 밸런스 -->
+
+    <div id="balancer-app" class="app-section">
+
+        <h2>
+            <span>풋살 팀 밸런스 나누기</span>
+            <small>에이스(공수겸장) 및 스탯 균등 배정</small>
+        </h2>
+
+        <div id="team-option">
+
+            <label>
+                <input
+                    type="radio"
+                    name="balancerTeamCount"
+                    value="2"
+                >
+                2팀
+            </label>
+
+            <label>
+                <input
+                    type="radio"
+                    name="balancerTeamCount"
+                    value="3"
+                    checked
+                >
+                3팀
+            </label>
+
+        </div>
+
+        <p>
+            오늘 참가하는 팀원을 모두 체크한 후,
+            '팀 나누기' 버튼을 누르세요.
+        </p>
+
+        <div
+            id="balancer-selection-controls"
+            class="selection-controls"
+        >
+
+            <button
+                class="select-all-btn"
+                type="button"
+                onclick="balancer_toggleCheckboxes(true)"
+            >
+                전체 선택
+            </button>
+
+            <button
+                class="deselect-all-btn"
+                type="button"
+                onclick="balancer_toggleCheckboxes(false)"
+            >
+                전체 해제
+            </button>
+
+        </div>
+
+        <p id="selected-count">
+            현재 0명 선택됨
+        </p>
+
+        <div
+            id="playerSelection"
+            class="player-list"
+        ></div>
+
+        <button
+            id="generateBtn"
+            onclick="balancer_generateTeams()"
+        >
+            팀 나누기!
+        </button>
+
+        <button
+            id="exportBtn"
+            onclick="balancer_exportToCSV()"
+        >
+            스탯 시트 내보내기 (CSV)
+        </button>
+
+        <div id="team-stats">
+
+            <div id="teamA-stats"></div>
+            <div id="teamB-stats"></div>
+            <div id="teamC-stats"></div>
+
+        </div>
+
+        <div id="results">
+
+            <div class="team" id="teamA">
+                <h3>A팀</h3>
+                <ul></ul>
+            </div>
+
+            <div class="team" id="teamB">
+                <h3>B팀</h3>
+                <ul></ul>
+            </div>
+
+            <div class="team" id="teamC">
+                <h3>C팀</h3>
+                <ul></ul>
+            </div>
+
+        </div>
+
+        <button
+            class="back-btn"
+            onclick="goBackToMain()"
+        >
+            ↩ 처음으로
+        </button>
+
+    </div>
+
+
+    <!-- 수동 드래프트 -->
+
+    <div id="draft-app" class="app-section">
+
+        <h1>수동 드래프트 모드</h1>
+
+        <div id="setup-area">
+
+            <!-- CSV 관리 -->
+
+            <div id="csv-management">
+
+                <input
+                    type="file"
+                    id="csv-file-input"
+                    accept=".csv"
+                    onchange="draft_handleFileSelect(event)"
+                >
+
+                <label
+                    for="csv-file-input"
+                    id="csv-import-label"
+                >
+                    CSV 가져오기
+                </label>
+
+                <button
+                    id="csv-export-setup-btn"
+                    onclick="draft_exportMasterListToCSV()"
+                >
+                    현재 명단 내보내기
+                </button>
+
+            </div>
+
+
+            <!-- 팀 수 + 기타 선수 -->
+
+            <div id="team-count-section">
+
+                <div id="team-count-option">
+
+                    <strong>팀 수 선택:</strong>
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="draftTeamCount"
+                            value="2"
+                        >
+                        2팀
+                    </label>
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="draftTeamCount"
+                            value="3"
+                            checked
+                        >
+                        3팀
+                    </label>
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="draftTeamCount"
+                            value="4"
+                        >
+                        4팀
+                    </label>
+
+                </div>
+
+
+                <!-- 기타 선수 입력 -->
+
+                <div id="guest-player-section">
+
+                    <strong>기타 선수 / 용병</strong>
+
+                    <div class="guest-player-inputs">
+
+                        <input
+                            type="text"
+                            id="guest-player-1"
+                            placeholder="기타 1 이름 입력"
+                            maxlength="20"
+                        >
+
+                        <input
+                            type="text"
+                            id="guest-player-2"
+                            placeholder="기타 2 이름 입력"
+                            maxlength="20"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="confirm-team-count-btn"
+                    onclick="draft_confirmTeamCount()"
+                >
+                    팀 수 확인
+                </button>
+
+            </div>
+
+
+            <!-- 선수 선택 -->
+
+            <div
+                id="player-selection-sections"
+                class="hidden-initially"
+            >
+
+                <p id="total-selected-count">
+                    총 0명 선택됨
+                </p>
+
+
+                <!-- 팀장 -->
+
+                <div class="setup-section">
+
+                    <h2 id="captain-select-title">
+                        1. 팀장 선택
+                    </h2>
+
+                    <div
+                        id="captain-selection"
+                        class="player-list"
+                    ></div>
+
+                </div>
+
+
+                <!-- 참가자 -->
+
+                <div class="setup-section">
+
+                    <h2>참가자 명단</h2>
+
+                    <div
+                        id="pool-selection"
+                        class="player-list"
+                    ></div>
+
+                    <div class="selection-controls">
+
+                        <button
+                            class="select-all-btn"
+                            onclick="draft_togglePoolCheckboxes(true)"
+                        >
+                            전체 선택
+                        </button>
+
+                        <button
+                            class="deselect-all-btn"
+                            onclick="draft_togglePoolCheckboxes(false)"
+                        >
+                            전체 해제
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="start-draft-btn"
+                    onclick="draft_startDraft()"
+                >
+                    드래프트 시작!
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- 실제 드래프트 화면 -->
+
+        <div
+            id="draft-area"
+            style="display:none;"
+        >
+
+            <div id="current-turn"></div>
+
+            <div
+                class="setup-section"
+                id="available-players-section"
+            >
+
+                <h3>선택 가능한 선수</h3>
+
+                <div
+                    id="available-players"
+                    class="player-list"
+                ></div>
+
+            </div>
+
+
+            <div id="teams-display">
+
+                <div
+                    class="team-display"
+                    id="team-0"
+                >
+                    <h4></h4>
+                    <ul></ul>
+                </div>
+
+                <div
+                    class="team-display"
+                    id="team-1"
+                >
+                    <h4></h4>
+                    <ul></ul>
+                </div>
+
+                <div
+                    class="team-display"
+                    id="team-2"
+                >
+                    <h4></h4>
+                    <ul></ul>
+                </div>
+
+                <div
+                    class="team-display"
+                    id="team-3"
+                >
+                    <h4></h4>
+                    <ul></ul>
+                </div>
+
+            </div>
+
+
+            <button
+                id="resetBtn"
+                onclick="draft_resetDraft()"
+            >
+                🔄 초기화면 가기
+            </button>
+
+        </div>
+
+
+        <button
+            class="back-btn hidden-initially"
+            id="draft-back-btn"
+            onclick="draft_resetDraft()"
+        >
+            ↩ 처음으로
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // =========================================================
+    // 29명 명단 (핵심 에이스: '공수 겸장(둘다)')
+    // - ALL: 상위권 실력자 및 공수 멀티 플레이어 (최우선 균등 배치)
+    // - DF: 수비 전담
+    // - FW: 공격 전담
+    // =========================================================
+
+    let masterPlayerListWithStats = [
+        { name: '김주식', pos: '공수 겸장 (둘다)', total: 88 },
+        { name: '나인수', pos: '공수 겸장 (둘다)', total: 86 },
+        { name: '김봉주', pos: '공수 겸장 (둘다)', total: 86 },
+        { name: '조준식', pos: '수비형 (수비)', total: 84 },
+        { name: '김영배', pos: '공격형 (공)', total: 84 },
+        { name: '김윤강', pos: '공수 겸장 (둘다)', total: 84 },
+        { name: '박지민', pos: '공수 겸장 (둘다)', total: 82 },
+        { name: '안효철', pos: '공수 겸장 (둘다)', total: 80 },
+        { name: '박범준', pos: '공격형 (공)', total: 80 },
+        { name: '김주환', pos: '공수 겸장 (둘다)', total: 79 },
+        { name: '박민서', pos: '공격형 (공)', total: 78 },
+        { name: '이현규', pos: '공격형 (공)', total: 77 },
+        { name: '이태양', pos: '공수 겸장 (둘다)', total: 77 },
+        { name: '김대권', pos: '공격형 (공)', total: 77 },
+        { name: '안광민', pos: '공격형 (공)', total: 75 },
+        { name: '임오섭', pos: '공수 겸장 (둘다)', total: 75 },
+        { name: '정은교', pos: '공수 겸장 (둘다)', total: 75 },
+        { name: '이인환', pos: '공격형 (공)', total: 74 },
+        { name: '최영진', pos: '공격형 (공)', total: 72 },
+        { name: '김윤환', pos: '수비형 (수)', total: 71 },
+        { name: '나길환', pos: '수비형 (수)', total: 70 },
+        { name: '손승협', pos: '공격형 (공)', total: 70 },
+        { name: '원지현', pos: '공수 겸장 (둘다)', total: 70 },
+        { name: '신지훈', pos: '공격형 (공격)', total: 69 },
+        { name: '지민근', pos: '공격형 (공)', total: 68 },
+        { name: '우종욱', pos: '공격형 (공)', total: 67 },
+        { name: '김도곤', pos: '공격형 (공)', total: 64 },
+        { name: '임병길', pos: '공수 겸장 (둘다)', total: 64 },
+        { name: '김동민', pos: '공격형 (공)', total: 62 }
+    ].sort((a, b) => a.name.localeCompare(b.name));
+
+
+    let masterPlayerListNames =
+        masterPlayerListWithStats.map(player => player.name);
+
+
+    let draftPlayerListNames = [];
+
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+
+    function getPosCategory(posStr) {
+        if (!posStr) return 'FW';
+        if (posStr.includes('둘다') || posStr.includes('겸장') || posStr.includes('공수') || posStr === 'ALL') return 'ALL';
+        if (posStr.includes('수비') || posStr.includes('수') || posStr === 'DF') return 'DF';
+        return 'FW';
+    }
+
+
+    function showApp(appId) {
+        document
+            .querySelectorAll('.app-section')
+            .forEach(section => {
+                section.classList.remove('active');
+            });
+
+        document
+            .getElementById(appId)
+            .classList.add('active');
+
+        if (appId === 'balancer-app') {
+            balancer_populatePlayerList();
+        } else if (appId === 'draft-app') {
+            draft_resetDraft(false);
+        }
+    }
+
+
+    function goBackToMain() {
+        showApp('initial-choice');
+        balancer_resetUI();
+        draft_resetDraft(true);
+    }
+
+
+    function balancer_resetUI() {
+        document
+            .querySelector(
+                '#balancer-app input[name="balancerTeamCount"][value="3"]'
+            )
+            .checked = true;
+
+        balancer_toggleCheckboxes(false);
+
+        document
+            .querySelectorAll('#balancer-app .team')
+            .forEach(el => {
+                el.classList.remove('show');
+            });
+
+        document
+            .querySelectorAll('#balancer-app #team-stats div')
+            .forEach(el => {
+                el.innerHTML = '';
+            });
+    }
+
+
+    // =========================================================
+    // 팀 밸런스 앱
+    // =========================================================
+
+
+    const balancerApp =
+        document.getElementById('balancer-app');
+
+
+    const bal_playerSelection =
+        balancerApp.querySelector('#playerSelection');
+
+
+    const bal_selectedCount =
+        balancerApp.querySelector('#selected-count');
+
+
+    function balancer_populatePlayerList() {
+        bal_playerSelection.innerHTML = '';
+
+        const players = masterPlayerListWithStats;
+
+        players
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach(player => {
+                const div = document.createElement('div');
+                div.className = 'player-item';
+
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.id = `bal-player-${player.name}`;
+                input.value = player.total;
+                input.setAttribute('data-name', player.name);
+                input.setAttribute('data-pos', player.pos || '');
+
+                const label = document.createElement('label');
+                label.htmlFor = `bal-player-${player.name}`;
+                label.textContent = player.name; // 화면상에는 이름만 표기
+
+                div.appendChild(input);
+                div.appendChild(label);
+                bal_playerSelection.appendChild(div);
+            });
+
+        bal_playerSelection.removeEventListener(
+            'change',
+            balancer_updateSelectedCount
+        );
+
+        bal_playerSelection.addEventListener(
+            'change',
+            balancer_updateSelectedCount
+        );
+
+        balancer_updateSelectedCount();
+    }
+
+
+    function balancer_toggleCheckboxes(checkAll) {
+        bal_playerSelection
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach(box => {
+                box.checked = checkAll;
+            });
+
+        balancer_updateSelectedCount();
+    }
+
+
+    function balancer_updateSelectedCount() {
+        const count =
+            bal_playerSelection
+                .querySelectorAll(
+                    'input[type="checkbox"]:checked'
+                )
+                .length;
+
+        bal_selectedCount.textContent = `현재 ${count}명 선택됨`;
+    }
+
+
+    // =========================================================
+    // ★ 에이스('공수 겸장') 최우선 균등 배치 + 능력치 밸런싱 로직
+    // =========================================================
+
+    function balancer_generateTeams() {
+        const teamCount = parseInt(
+            balancerApp.querySelector('input[name="balancerTeamCount"]:checked').value
+        );
+
+        const checkedBoxes = bal_playerSelection.querySelectorAll('input[type="checkbox"]:checked');
+
+        let players = [];
+        checkedBoxes.forEach(box => {
+            players.push({
+                name: box.getAttribute('data-name'),
+                skill: parseFloat(box.value),
+                pos: box.getAttribute('data-pos') || ''
+            });
+        });
+
+        if (players.length < teamCount) {
+            alert(`팀을 나누기에 인원이 부족합니다. (최소 ${teamCount}명 필요)`);
+            return;
+        }
+
+        // 포지션별 그룹화
+        let groups = { 'ALL': [], 'DF': [], 'FW': [] };
+        players.forEach(p => {
+            const cat = getPosCategory(p.pos);
+            p.posCat = cat;
+            groups[cat].push(p);
+        });
+
+        let teamNames = teamCount === 2 ? ['A', 'B'] : ['A', 'B', 'C'];
+        let teams = {};
+        teamNames.forEach(name => {
+            teams[name] = {
+                players: [],
+                totalSkill: 0,
+                posCounts: { 'ALL': 0, 'DF': 0, 'FW': 0 }
+            };
+        });
+
+        // 1. '공수 겸장(ALL)' 핵심 상위권 에이스들을 최우선 균등 분배
+        // 2. 수비 전담(DF) 분배
+        // 3. 공격 전담(FW) 분배
+        const processOrder = ['ALL', 'DF', 'FW'];
+
+        processOrder.forEach(key => {
+            let groupPlayers = groups[key].map(p => ({
+                ...p,
+                sortSkill: p.skill + (Math.random() - 0.5) * 0.1 // 약간의 무작위성 부여
+            })).sort((a, b) => b.sortSkill - a.sortSkill);
+
+            groupPlayers.forEach(p => {
+                // 1순위: 팀원 수가 가장 적은 팀
+                const minTeamSize = Math.min(...teamNames.map(name => teams[name].players.length));
+                let candidatesL1 = teamNames.filter(name => teams[name].players.length === minTeamSize);
+
+                // 2순위: 해당 포지션군 인원이 가장 적은 팀
+                const minPosCount = Math.min(...candidatesL1.map(name => teams[name].posCounts[p.posCat]));
+                let candidatesL2 = candidatesL1.filter(name => teams[name].posCounts[p.posCat] === minPosCount);
+
+                // 3순위: 해당 선수를 추가했을 때 평균 능력치 점수가 가장 낮아지는 팀 선택
+                let chosenTeamName = candidatesL2.reduce((best, name) => {
+                    const currentAvg = (teams[name].totalSkill + p.skill) / (teams[name].players.length + 1);
+                    const bestAvg = (teams[best].totalSkill + p.skill) / (teams[best].players.length + 1);
+                    return currentAvg < bestAvg ? name : best;
+                }, candidatesL2[0]);
+
+                teams[chosenTeamName].players.push(p);
+                teams[chosenTeamName].totalSkill += p.skill;
+                teams[chosenTeamName].posCounts[p.posCat]++;
+            });
+        });
+
+        balancer_displayResults(teams, teamNames, teamCount);
+    }
+
+
+    function balancer_displayResults(teams, teamNames, teamCount) {
+        balancerApp
+            .querySelectorAll('.team')
+            .forEach(el => {
+                el.classList.remove('show');
+                el.removeAttribute('data-team-count');
+            });
+
+        balancerApp
+            .querySelectorAll('#team-stats div')
+            .forEach(el => {
+                el.innerHTML = '';
+            });
+
+        for (const teamName of teamNames) {
+            const teamEl =
+                balancerApp.querySelector(`#team${teamName}`);
+
+            const ul = teamEl.getElementsByTagName('ul')[0];
+            ul.innerHTML = '';
+
+            teamEl.classList.add('show');
+            teamEl.setAttribute('data-team-count', teamCount);
+
+            shuffleArray(teams[teamName].players);
+
+            for (const player of teams[teamName].players) {
+                const li = document.createElement('li');
+                li.innerHTML = player.name;
+                ul.appendChild(li);
+            }
+
+            const statsEl =
+                balancerApp.querySelector(`#team${teamName}-stats`);
+
+            const teamSize = teams[teamName].players.length;
+            let avgStat = 0;
+
+            if (teamSize > 0) {
+                avgStat = teams[teamName].totalSkill / teamSize;
+            }
+
+            statsEl.innerHTML =
+                `<strong>${teamName}팀</strong>: 총 ${teamSize}명 / <strong>평균 스탯: ${avgStat.toFixed(1)}</strong>`;
+        }
+    }
+
+
+    function balancer_exportToCSV() {
+        const password = prompt("비밀번호를 입력하세요:", "");
+
+        if (password !== "0909") {
+            if (password !== null) {
+                alert("비밀번호가 틀렸습니다.");
+            }
+            return;
+        }
+
+        let csvContent = "이름,능력치점수\n";
+
+        masterPlayerListWithStats.forEach(player => {
+            const row = [player.name, player.total].join(',');
+            csvContent += row + "\n";
+        });
+
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csvContent], {
+            type: 'text/csv;charset=utf-8-sig;'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'futsal_stats.csv';
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+
+    // =========================================================
+    // 드래프트 앱
+    // =========================================================
+
+
+    const draftApp = document.getElementById('draft-app');
+
+    let draft_requiredCaptains = 3;
+    let draft_captains = [];
+    let draft_draftPool = [];
+    let draft_teams = [];
+    let draft_availablePlayers = [];
+    let draft_currentPickerIndex = 0;
+    let draft_draftRound = 1;
+    let draft_pickNumberInRound = 1;
+    let draft_isSnakeForward = true;
+
+
+    function draft_handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const names = text
+                .split('\n')
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+
+            if (names.length > 0) {
+                masterPlayerListNames = names.sort();
+
+                const newStatsList = [];
+                const currentStatsMap = new Map(
+                    masterPlayerListWithStats.map(player => [
+                        player.name,
+                        { total: player.total, pos: player.pos }
+                    ])
+                );
+
+                const defaultTotal = 75.0;
+
+                masterPlayerListNames.forEach(name => {
+                    const existing = currentStatsMap.get(name);
+                    newStatsList.push({
+                        name: name,
+                        pos: existing ? existing.pos : '공격형 (공)',
+                        total: existing ? existing.total : defaultTotal
+                    });
+                });
+
+                masterPlayerListWithStats = newStatsList.sort((a, b) =>
+                    a.name.localeCompare(b.name)
+                );
+
+                draft_resetDraft(false);
+
+                alert(`${names.length}명의 선수 명단을 성공적으로 가져왔습니다.\n팀 수부터 다시 선택해주세요.`);
+            } else {
+                alert("CSV 파일을 읽었으나 유효한 이름이 없습니다.\n파일 형식을 확인해주세요 (한 줄에 이름 하나씩).");
+            }
+        };
+
+        reader.onerror = function() {
+            alert("파일을 읽는 중 오류가 발생했습니다.");
+        };
+
+        reader.readAsText(file, 'UTF-8');
+        event.target.value = null;
+    }
+
+
+    function draft_exportMasterListToCSV() {
+        if (masterPlayerListNames.length === 0) {
+            alert("내보낼 선수 명단이 없습니다.");
+            return;
+        }
+
+        let csvContent = masterPlayerListNames.join('\n');
+        const bom = '\uFEFF';
+        const blob = new Blob([bom + csvContent], {
+            type: 'text/csv;charset=utf-8-sig;'
+        });
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'player_list.csv';
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+
+    function draft_confirmTeamCount() {
+        draft_requiredCaptains = parseInt(
+            draftApp.querySelector('input[name="draftTeamCount"]:checked').value
+        );
+
+        draftPlayerListNames = [...masterPlayerListNames];
+
+        const guest1 = draftApp.querySelector('#guest-player-1').value.trim();
+        const guest2 = draftApp.querySelector('#guest-player-2').value.trim();
+
+        [guest1, guest2].forEach(name => {
+            if (name !== '' && !draftPlayerListNames.includes(name)) {
+                draftPlayerListNames.push(name);
+            }
+        });
+
+        draftApp.querySelector('#captain-select-title').textContent =
+            `1. 팀장 ${draft_requiredCaptains}명 선택`;
+
+        draftApp.querySelector('#team-count-section').style.display = 'none';
+        draftApp.querySelector('#player-selection-sections').style.display = 'block';
+        draftApp.querySelector('#draft-back-btn').style.display = 'block';
+
+        draft_populatePlayerList();
+        draft_updateTotalSelectedCount();
+    }
+
+
+    function draft_populatePlayerList() {
+        const captainListDiv = draftApp.querySelector('#captain-selection');
+        const poolListDiv = draftApp.querySelector('#pool-selection');
+
+        captainListDiv.innerHTML = '';
+        poolListDiv.innerHTML = '';
+
+        const players = draftPlayerListNames;
+
+        if (players.length === 0) {
+            captainListDiv.innerHTML = '<p style="text-align:center; color:#888;">선수 명단이 없습니다.</p>';
+            poolListDiv.innerHTML = '<p style="text-align:center; color:#888;">선수 명단이 없습니다.</p>';
+            return;
+        }
+
+        players.forEach(name => {
+            captainListDiv.innerHTML += `
+                <div class="player-item">
+                    <input
+                        type="checkbox"
+                        id="draft-cap-${name}"
+                        name="draftCaptains"
+                        value="${name}"
+                        onchange="draft_handleCaptainChange(this)"
+                    >
+                    <label for="draft-cap-${name}">${name}</label>
+                </div>
+            `;
+
+            poolListDiv.innerHTML += `
+                <div class="player-item">
+                    <input
+                        type="checkbox"
+                        id="draft-pool-${name}"
+                        name="draftPool"
+                        value="${name}"
+                        onchange="draft_updateTotalSelectedCount()"
+                    >
+                    <label for="draft-pool-${name}">${name}</label>
+                </div>
+            `;
+        });
+    }
+
+
+    function draft_handleCaptainCountChange() {
+        draft_requiredCaptains = parseInt(
+            draftApp.querySelector('input[name="draftTeamCount"]:checked').value
+        );
+
+        draftApp.querySelector('#captain-select-title').textContent =
+            `1. 팀장 ${draft_requiredCaptains}명 선택`;
+
+        draftApp.querySelectorAll('input[name="draftCaptains"]:checked').forEach(cb => {
+            cb.checked = false;
+            draft_updatePoolCheckbox(cb.value, false);
+        });
+
+        draft_updateTotalSelectedCount();
+    }
+
+
+    function draft_handleCaptainChange(checkbox) {
+        const checkedCaptains =
+            draftApp.querySelectorAll('input[name="draftCaptains"]:checked').length;
+
+        if (checkedCaptains > draft_requiredCaptains) {
+            alert(`팀장은 ${draft_requiredCaptains}명만 선택할 수 있습니다.`);
+            checkbox.checked = false;
+            return;
+        }
+
+        draft_updatePoolCheckbox(checkbox.value, checkbox.checked);
+        draft_updateTotalSelectedCount();
+    }
+
+
+    function draft_updatePoolCheckbox(playerName, isCaptain) {
+        const poolCheckbox =
+            draftApp.querySelector(`#draft-pool-${playerName}`);
+
+        if (poolCheckbox) {
+            poolCheckbox.checked = isCaptain ? false : poolCheckbox.checked;
+            poolCheckbox.disabled = isCaptain;
+        }
+    }
+
+
+    function draft_togglePoolCheckboxes(checkAll) {
+        draftApp.querySelectorAll('input[name="draftPool"]').forEach(checkbox => {
+            if (!checkbox.disabled) {
+                checkbox.checked = checkAll;
+            }
+        });
+
+        draft_updateTotalSelectedCount();
+    }
+
+
+    function draft_updateTotalSelectedCount() {
+        const countElement = draftApp.querySelector('#total-selected-count');
+
+        if (countElement) {
+            const selectedCaptainsCount =
+                draftApp.querySelectorAll('input[name="draftCaptains"]:checked').length;
+            const selectedPoolCount =
+                draftApp.querySelectorAll('input[name="draftPool"]:checked').length;
+
+            const totalCount = selectedCaptainsCount + selectedPoolCount;
+            countElement.textContent = `총 ${totalCount}명 선택됨`;
+        }
+    }
+
+
+    function draft_startDraft() {
+        let selectedCaptains = Array.from(
+            draftApp.querySelectorAll('input[name="draftCaptains"]:checked')
+        ).map(cb => cb.value);
+
+        if (selectedCaptains.length !== draft_requiredCaptains) {
+            alert(`팀장 ${draft_requiredCaptains}명을 정확히 선택해주세요.`);
+            return;
+        }
+
+        shuffleArray(selectedCaptains);
+        draft_captains = selectedCaptains;
+
+        const selectedPool = Array.from(
+            draftApp.querySelectorAll('input[name="draftPool"]:checked')
+        ).map(cb => cb.value);
+
+        if (selectedPool.length < 1) {
+            alert("참가자를 1명 이상 선택해주세요.");
+            return;
+        }
+
+        draft_draftPool = [...selectedPool];
+        draft_availablePlayers = [...selectedPool];
+
+        draft_teams = draft_captains.map(captainName => ({
+            captain: captainName,
+            players: []
+        }));
+
+        draft_currentPickerIndex = 0;
+        draft_draftRound = 1;
+        draft_pickNumberInRound = 1;
+        draft_isSnakeForward = true;
+
+        draftApp.querySelector('#setup-area').style.display = 'none';
+        draftApp.querySelector('#draft-area').style.display = 'block';
+        draftApp.querySelector('#available-players-section').style.display = 'block';
+        draftApp.querySelector('#draft-back-btn').style.display = 'none';
+
+        const teamsDisplay = draftApp.querySelector('#teams-display');
+        teamsDisplay.style.setProperty('--team-count', draft_requiredCaptains);
+
+        draftApp.querySelectorAll('.team-display').forEach((div, index) => {
+            div.classList.toggle('active', index < draft_requiredCaptains);
+        });
+
+        draft_updateDraftDisplay();
+    }
+
+
+    function draft_updateDraftDisplay() {
+        if (draft_availablePlayers.length === 0) {
+            draftApp.querySelector('#current-turn').textContent =
+                "🎉 드래프트 완료! 🎉";
+            draftApp.querySelector('#available-players-section').style.display = 'none';
+        } else {
+            const currentCaptainName = draft_captains[draft_currentPickerIndex];
+            draftApp.querySelector('#current-turn').textContent =
+                `🚩 ${draft_draftRound}라운드 ${draft_pickNumberInRound}번째 순서: ${currentCaptainName} 선택 중...`;
+        }
+
+        const availablePlayersDiv =
+            draftApp.querySelector('#available-players');
+        availablePlayersDiv.innerHTML = '';
+
+        const currentDraftPoolSet = new Set(draft_availablePlayers);
+
+        draft_draftPool.forEach(name => {
+            const isAvailable = currentDraftPoolSet.has(name);
+
+            availablePlayersDiv.innerHTML += `
+                <button
+                    class="available-player-btn ${isAvailable ? '' : 'picked'}"
+                    onclick="${isAvailable ? `draft_selectPlayer('${name}')` : ''}"
+                    ${!isAvailable ? 'disabled' : ''}
+                >
+                    ${name}
+                </button>
+            `;
+        });
+
+        draft_teams.forEach((team, index) => {
+            const teamDiv = draftApp.querySelector(`#team-${index}`);
+
+            if (teamDiv.classList.contains('active')) {
+                teamDiv.querySelector('h4').textContent = `⭐ ${team.captain} 팀`;
+
+                const playerListUl = teamDiv.querySelector('ul');
+                playerListUl.innerHTML = '';
+
+                const shuffledPlayers = [...team.players];
+                shuffleArray(shuffledPlayers);
+
+                shuffledPlayers.forEach(player => {
+                    playerListUl.innerHTML += `<li>${player}</li>`;
+                });
+            }
+        });
+    }
+
+
+    function draft_selectPlayer(playerName) {
+        if (draft_availablePlayers.length === 0) return;
+
+        draft_teams[draft_currentPickerIndex].players.push(playerName);
+        draft_availablePlayers = draft_availablePlayers.filter(
+            player => player !== playerName
+        );
+
+        const numberOfCaptains = draft_captains.length;
+
+        if (draft_availablePlayers.length > 0) {
+            if (draft_isSnakeForward) {
+                if (draft_currentPickerIndex < numberOfCaptains - 1) {
+                    draft_currentPickerIndex++;
+                    draft_pickNumberInRound++;
+                } else {
+                    draft_isSnakeForward = false;
+                    draft_draftRound++;
+                    draft_pickNumberInRound = 1;
+                }
+            } else {
+                if (draft_currentPickerIndex > 0) {
+                    draft_currentPickerIndex--;
+                    draft_pickNumberInRound++;
+                } else {
+                    draft_isSnakeForward = true;
+                    draft_draftRound++;
+                    draft_pickNumberInRound = 1;
+                }
+            }
+        }
+
+        draft_updateDraftDisplay();
+    }
+
+
+    function draft_resetDraft(goToMain = true) {
+        draft_requiredCaptains = 3;
+        draft_captains = [];
+        draft_draftPool = [];
+        draft_teams = [];
+        draft_availablePlayers = [];
+        draftPlayerListNames = [];
+
+        draft_currentPickerIndex = 0;
+        draft_draftRound = 1;
+        draft_pickNumberInRound = 1;
+        draft_isSnakeForward = true;
+
+        draftApp.querySelector('#draft-area').style.display = 'none';
+        draftApp.querySelector('#setup-area').style.display = 'block';
+        draftApp.querySelector('#team-count-section').style.display = 'block';
+        draftApp.querySelector('#player-selection-sections').style.display = 'none';
+        draftApp.querySelector('#draft-back-btn').style.display = 'none';
+
+        draftApp.querySelector('input[name="draftTeamCount"][value="3"]').checked = true;
+
+        draftApp.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = false;
+        });
+
+        draftApp.querySelectorAll('.team-display ul').forEach(ul => ul.innerHTML = '');
+        draftApp.querySelectorAll('.team-display h4').forEach(h4 => h4.textContent = '');
+
+        draftApp.querySelector('#current-turn').textContent = '';
+        draftApp.querySelector('#available-players').innerHTML = '';
+        draftApp.querySelector('#captain-selection').innerHTML = '';
+        draftApp.querySelector('#pool-selection').innerHTML = '';
+
+        const guestPlayer1 = draftApp.querySelector('#guest-player-1');
+        const guestPlayer2 = draftApp.querySelector('#guest-player-2');
+
+        if (guestPlayer1) guestPlayer1.value = '';
+        if (guestPlayer2) guestPlayer2.value = '';
+
+        if (goToMain) {
+            goBackToMain();
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showApp('initial-choice');
+    });
+
+</script>
+
+</body>
+</html>
