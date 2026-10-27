@@ -209,7 +209,8 @@
             min-width: 150px;
         }
 
-        #balancer-app .team.show[data-team-count="3"] {
+        #balancer-app .team.show[data-team-count="3"],
+        #balancer-app .team.show[data-team-count="4"] {
             flex-basis: 100%;
             min-width: 150px;
         }
@@ -217,6 +218,9 @@
         @media (min-width: 601px) {
             #balancer-app .team.show[data-team-count="3"] {
                 flex-basis: 32%;
+            }
+            #balancer-app .team.show[data-team-count="4"] {
+                flex-basis: 24%;
             }
         }
 
@@ -509,6 +513,15 @@
                 3팀
             </label>
 
+            <label>
+                <input
+                    type="radio"
+                    name="balancerTeamCount"
+                    value="4"
+                >
+                4팀
+            </label>
+
         </div>
 
         <p>
@@ -567,6 +580,7 @@
             <div id="teamA-stats"></div>
             <div id="teamB-stats"></div>
             <div id="teamC-stats"></div>
+            <div id="teamD-stats"></div>
 
         </div>
 
@@ -584,6 +598,11 @@
 
             <div class="team" id="teamC">
                 <h3>C팀</h3>
+                <ul></ul>
+            </div>
+
+            <div class="team" id="teamD">
+                <h3>D팀</h3>
                 <ul></ul>
             </div>
 
@@ -730,6 +749,8 @@
                     <h2 id="captain-select-title">
                         1. 팀장 선택
                     </h2>
+                    
+                    <p style="font-size: 13px; color: #555; margin-bottom: 10px;">위에서 지정한 팀 수에 맞게 팀장들을 가장 먼저 체크해주세요.</p>
 
                     <div
                         id="captain-selection"
@@ -1018,7 +1039,7 @@
 
                 const label = document.createElement('label');
                 label.htmlFor = `bal-player-${player.name}`;
-                label.textContent = player.name; // 화면상에는 이름만 표기
+                label.textContent = player.name; 
 
                 div.appendChild(input);
                 div.appendChild(label);
@@ -1095,7 +1116,8 @@
             groups[cat].push(p);
         });
 
-        let teamNames = teamCount === 2 ? ['A', 'B'] : ['A', 'B', 'C'];
+        // 4팀 지원 로직 수정
+        let teamNames = teamCount === 2 ? ['A', 'B'] : (teamCount === 3 ? ['A', 'B', 'C'] : ['A', 'B', 'C', 'D']);
         let teams = {};
         teamNames.forEach(name => {
             teams[name] = {
@@ -1105,27 +1127,21 @@
             };
         });
 
-        // 1. '공수 겸장(ALL)' 핵심 상위권 에이스들을 최우선 균등 분배
-        // 2. 수비 전담(DF) 분배
-        // 3. 공격 전담(FW) 분배
         const processOrder = ['ALL', 'DF', 'FW'];
 
         processOrder.forEach(key => {
             let groupPlayers = groups[key].map(p => ({
                 ...p,
-                sortSkill: p.skill + (Math.random() - 0.5) * 0.1 // 약간의 무작위성 부여
+                sortSkill: p.skill + (Math.random() - 0.5) * 0.1 
             })).sort((a, b) => b.sortSkill - a.sortSkill);
 
             groupPlayers.forEach(p => {
-                // 1순위: 팀원 수가 가장 적은 팀
                 const minTeamSize = Math.min(...teamNames.map(name => teams[name].players.length));
                 let candidatesL1 = teamNames.filter(name => teams[name].players.length === minTeamSize);
 
-                // 2순위: 해당 포지션군 인원이 가장 적은 팀
                 const minPosCount = Math.min(...candidatesL1.map(name => teams[name].posCounts[p.posCat]));
                 let candidatesL2 = candidatesL1.filter(name => teams[name].posCounts[p.posCat] === minPosCount);
 
-                // 3순위: 해당 선수를 추가했을 때 평균 능력치 점수가 가장 낮아지는 팀 선택
                 let chosenTeamName = candidatesL2.reduce((best, name) => {
                     const currentAvg = (teams[name].totalSkill + p.skill) / (teams[name].players.length + 1);
                     const bestAvg = (teams[best].totalSkill + p.skill) / (teams[best].players.length + 1);
@@ -1472,7 +1488,7 @@
         ).map(cb => cb.value);
 
         if (selectedCaptains.length !== draft_requiredCaptains) {
-            alert(`팀장 ${draft_requiredCaptains}명을 정확히 선택해주세요.`);
+            alert(`팀장 ${draft_requiredCaptains}명을 가장 먼저 정확히 선택해주세요.`);
             return;
         }
 
